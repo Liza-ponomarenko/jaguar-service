@@ -18,6 +18,13 @@ enum Role {
   ADMIN
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -28,14 +35,31 @@ model User {
   city      String
   role      Role     @default(USER)
   createdAt DateTime @default(now())
-
-  bookings  Booking[]
+  cars     Car[]
+  bookings Booking[]
 }
 
 model Booking {
-  id        Int      @id @default(autoincrement())
+  id        Int           @id @default(autoincrement())
   service   String
+  status    BookingStatus @default(PENDING)
+  comment   String?
+  bookingDate DateTime
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  carId     Int?
+  user      User          @relation(fields: [userId], references: [id])
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  car       Car?     @relation(fields: [carId], references: [id])
+  @@unique([bookingDate])
+}
+
+model Car {
+  id     Int    @id @default(autoincrement())
+  brand  String   @default("Jaguar")
+  model  String
+  year   Int
+  userId Int
+  user   User   @relation(fields: [userId], references: [id])
+  bookings  Booking[]
 }

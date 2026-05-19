@@ -1,32 +1,21 @@
 import prisma from '../../utils/prisma'
+import { transporter } from '../../utils/mailer'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  
-  if (!body.email || !body.email.includes('@')) {
-    throw createError({ 
-      statusCode: 400, 
-      statusMessage: 'Введите корректный email' 
-    })
-  }
+  const { email } = await readBody(event)
 
-  // Проверяем существование пользователя
-  const user = await prisma.user.findUnique({
-    where: { email: body.email }
-  })
+  const user = await prisma.user.findUnique({ where: { email } })
 
   if (!user) {
-    // Для безопасности не раскрываем, существует ли email
-    return {
-      message: 'Если аккаунт существует, инструкция по восстановлению отправлена на email'
-    }
+    throw createError({ statusCode: 404, statusMessage: 'Пользователь не найден' })
   }
 
-  // TODO: Здесь интеграция с сервисом отправки писем (Resend, SendGrid, SMTP)
-  // const resetToken = generateResetToken(user.id)
-  // await sendEmail(body.email, 'reset-password', { token: resetToken })
+  await transporter.sendMail({
+    from: '"Jaguar Service" <your@gmail.com>',
+    to: email,
+    subject: 'Восстановление пароля',
+    text: `Ваш пароль: ${user.password}`
+  })
 
-  return {
-    message: `Инструкция по восстановлению отправлена на ${body.email}`
-  }
+  return { message: 'Письмо отправлено' }
 })

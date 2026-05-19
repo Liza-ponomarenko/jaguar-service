@@ -18,10 +18,21 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Неверный пароль' })
   }
 
+  await setUserSession(event, {
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role
+    }
+  })
+
   return {
     id: user.id,
     email: user.email,
-    role: user.role,
-    fullName: user.fullName
+    fullName: user.fullName,
+    phone: user.phone,
+    region: user.region,
+    city: user.city,
+    role: user.role
   }
 })

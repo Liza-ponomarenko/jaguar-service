@@ -1,17 +1,28 @@
 export const useAuth = () => {
-  const user = useState<any | null>('user', () => null)
+  const user = useState<User | null>('user', () => null)
   const isLoading = useState<boolean>('auth-loading', () => false)
   const authError = useState<string | null>('auth-error', () => null)
+
+  const fetchUser = async () => {
+    try {
+      const data = await $fetch<User>('/api/auth/me', {
+        credentials: 'include'
+      })
+      user.value = data
+    } catch {
+      user.value = null
+    }
+  }
 
   const login = async (email: string, password: string) => {
     isLoading.value = true
     authError.value = null
     
     try {
-      // Реальный запрос к API
-      const data = await $fetch('/api/auth/login', {
+      const data = await $fetch<User>('/api/auth/login', {
         method: 'POST',
-        body: { email, password }
+        body: { email, password },
+        credentials: 'include'
       })
       
       user.value = data
@@ -50,9 +61,16 @@ export const useAuth = () => {
     }
   }
 
-  const logout = () => {
-    user.value = null
-    navigateTo('/')
+  const logout = async () => {
+    try {
+      await $fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+    } finally {
+      user.value = null
+      navigateTo('/')
+    }
   }
 
   const forgotPassword = async (email: string) => {
@@ -72,13 +90,31 @@ export const useAuth = () => {
     }
   }
 
+  const isAdmin = computed(() => user.value?.role === 'ADMIN')
+  const isUser = computed(() => user.value?.role === 'USER')
+  const isAuthenticated = computed(() => !!user.value)
+
   return {
-    user,
+    user: readonly(user),
     isLoading: readonly(isLoading),
     authError: readonly(authError),
+    isAdmin,
+    isUser,
+    isAuthenticated,
+    fetchUser,
     login,
     register,
     logout,
     forgotPassword
   }
+}
+
+export interface User {
+  id: number
+  email: string
+  fullName: string
+  phone: string
+  region: string
+  city: string
+  role: 'USER' | 'ADMIN'
 }

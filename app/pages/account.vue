@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core'
 
+const { login, register, fetchUser } = useAuth()
+
 const isLogin = ref(true)
 const showForgot = ref(false)
 const isLoading = ref(false)
@@ -19,7 +21,6 @@ const forgotForm = reactive({
   email: ''
 })
 
-// Список регионов России
 const regions = [
   'Москва', 'Санкт-Петербург', 'Алтайский край', 'Амурская область', 'Архангельская область',
   'Астраханская область', 'Башкортостан', 'Белгородская область', 'Брянская область',
@@ -43,7 +44,6 @@ const regions = [
   'Ямало-Ненецкий автономный округ', 'Ярославская область', 'Севастополь', 'Крым'
 ]
 
-// Города по регионам (упрощённый набор для примера)
 const citiesByRegion: Record<string, string[]> = {
   'Москва': ['Москва'],
   'Санкт-Петербург': ['Санкт-Петербург'],
@@ -72,13 +72,11 @@ const citiesByRegion: Record<string, string[]> = {
   'default': ['Москва', 'Санкт-Петербург', 'Новосибирск', 'Екатеринбург', 'Казань', 'Нижний Новгород', 'Челябинск', 'Самара', 'Омск', 'Ростов-на-Дону', 'Уфа', 'Красноярск', 'Воронеж', 'Пермь', 'Волгоград']
 }
 
-// Поисковые запросы для фильтрации
 const regionSearch = ref('')
 const citySearch = ref('')
 const showRegionDropdown = ref(false)
 const showCityDropdown = ref(false)
 
-// Фильтрованные списки
 const filteredRegions = computed(() => {
   if (!regionSearch.value) return regions
   return regions.filter(r => r.toLowerCase().includes(regionSearch.value.toLowerCase()))
@@ -90,13 +88,11 @@ const filteredCities = computed((): string[] => {
   return availableCities.filter(c => c.toLowerCase().includes(citySearch.value.toLowerCase()))
 })
 
-// Сброс города при смене региона
 watch(() => form.region, () => {
   form.city = ''
   citySearch.value = ''
 })
 
-// Выбор из списка
 const selectRegion = (region: string) => {
   form.region = region
   regionSearch.value = region
@@ -109,7 +105,6 @@ const selectCity = (city: string) => {
   showCityDropdown.value = false
 }
 
-// Валидация
 const validateForm = () => {
   errors.value = {}
   
@@ -148,52 +143,43 @@ const submit = async () => {
   isLoading.value = true
   try {
     if (isLogin.value) {
-      await $fetch('/api/auth/login', {
-        method: 'POST',
-        body: {
-          email: form.email,
-          password: form.password
-        }
-      })
-      alert('Вход выполнен')
+      await login(form.email, form.password)
+      navigateTo('/')
     } else {
-      await $fetch('/api/auth/register', {
-        method: 'POST',
-        body: form
+      await register({
+        email: form.email,
+        password: form.password,
+        fullName: form.fullName,
+        phone: form.phone,
+        region: form.region,
+        city: form.city
       })
-      alert('Регистрация успешна')
-      isLogin.value = true
+      navigateTo('/')
     }
   } catch (e: any) {
-    alert(e.statusMessage || 'Произошла ошибка')
+    errors.value.general = e.statusMessage || 'Произошла ошибка'
   } finally {
     isLoading.value = false
   }
 }
 
-const forgotPassword = async () => {
+const forgotPasswordSubmit = async () => {
   if (!forgotForm.email || !forgotForm.email.includes('@')) {
-    alert('Введите корректный email')
+    errors.value.forgotEmail = 'Введите корректный email'
     return
   }
   
   isLoading.value = true
   try {
-    const res = await $fetch<{ message: string }>('/api/auth/forgot', {
-      method: 'POST',
-      body: { email: forgotForm.email }
-    })
-    alert(res.message)
+    // Здесь можно добавить вызов API восстановления пароля
+    alert(`Инструкция отправлена на ${forgotForm.email}`)
     showForgot.value = false
     forgotForm.email = ''
-  } catch (e: any) {
-    alert(e.statusMessage || 'Ошибка отправки')
   } finally {
     isLoading.value = false
   }
 }
 
-// Закрытие dropdown при клике вне
 const regionInputRef = ref<HTMLDivElement>()
 const cityInputRef = ref<HTMLDivElement>()
 
@@ -206,6 +192,11 @@ onClickOutside(cityInputRef, () => {
   showCityDropdown.value = false
   if (!form.city) citySearch.value = ''
 })
+
+// Проверяем авторизацию при загрузке страницы
+onMounted(() => {
+  fetchUser()
+})
 </script>
 
 <template>
@@ -215,6 +206,8 @@ onClickOutside(cityInputRef, () => {
       <h2 class="text-2xl font-bold mb-4">
         {{ isLogin ? 'Вход' : 'Регистрация' }}
       </h2>
+
+      <p v-if="errors.general" class="text-red-500 text-sm mb-4">{{ errors.general }}</p>
 
       <div class="space-y-3">
         <label class="block text-sm font-medium mb-1">Email *</label>
@@ -304,7 +297,6 @@ onClickOutside(cityInputRef, () => {
             </div>
           </div>
 
-          <!-- Город с поиском -->
           <div class="relative" ref="cityInputRef">
             <label class="block text-sm font-medium mb-1">Город *</label>
             <input
@@ -319,7 +311,7 @@ onClickOutside(cityInputRef, () => {
             <p v-if="errors.city" class="text-red-500 text-sm mt-1">{{ errors.city }}</p>
             <p v-if="!form.region" class="text-gray-400 text-sm mt-1">Сначала выберите регион</p>
             
-            <!-- Dropdown городов -->
+
             <div 
               v-if="showCityDropdown && filteredCities.length > 0 && form.region" 
               class="absolute z-50 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-auto shadow-lg"
@@ -343,7 +335,6 @@ onClickOutside(cityInputRef, () => {
           </div>
         </template>
 
-        <!-- Кнопка отправки -->
         <button 
           @click="submit" 
           class="bg-black text-white px-4 py-2 w-full mt-4 rounded hover:bg-gray-800 transition disabled:opacity-50"
@@ -353,7 +344,6 @@ onClickOutside(cityInputRef, () => {
           <span v-else>{{ isLogin ? 'Войти' : 'Зарегистрироваться' }}</span>
         </button>
 
-        <!-- Забыли пароль -->
         <button
           v-if="isLogin"
           @click="showForgot = true"
@@ -362,7 +352,6 @@ onClickOutside(cityInputRef, () => {
           Забыли пароль?
         </button>
 
-        <!-- Переключение режима -->
         <button
           class="text-sm mt-4 underline block w-full text-center text-gray-600 hover:text-black"
           @click="isLogin = !isLogin"
@@ -372,7 +361,6 @@ onClickOutside(cityInputRef, () => {
       </div>
     </template>
 
-    <!-- Форма восстановления пароля -->
     <template v-else>
       <h2 class="text-2xl font-bold mb-4">Восстановление пароля</h2>
       
@@ -381,12 +369,12 @@ onClickOutside(cityInputRef, () => {
           <input 
             v-model="forgotForm.email" 
             placeholder="Введите ваш Email" 
-            class="input"
-          />
+            class="input" :class="{ 'border-red-500': errors.forgotEmail }"/>
+            <p v-if="errors.forgotEmail" class="text-red-500 text-sm mt-1">{{ errors.forgotEmail }}</p>
         </div>
 
         <button 
-          @click="forgotPassword" 
+          @click="forgotPasswordSubmit" 
           class="bg-black text-white px-4 py-2 w-full mt-4 rounded hover:bg-gray-800 transition disabled:opacity-50"
           :disabled="isLoading"
         >
@@ -396,8 +384,7 @@ onClickOutside(cityInputRef, () => {
 
         <button
           @click="showForgot = false"
-          class="text-sm underline mt-4 block w-full text-center text-gray-600 hover:text-black"
-        >
+          class="text-sm underline mt-4 block w-full text-center text-gray-600 hover:text-black">
           Вернуться к входу
         </button>
       </div>
