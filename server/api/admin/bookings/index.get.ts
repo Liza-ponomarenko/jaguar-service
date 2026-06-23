@@ -8,10 +8,11 @@ export default defineEventHandler(async () => {
           email: true,
           fullName: true
         }
-      }
+      },
+      car: true
     },
     orderBy: {
-      createdAt: 'desc'
+      bookingDate: 'desc'
     }
   })
 })

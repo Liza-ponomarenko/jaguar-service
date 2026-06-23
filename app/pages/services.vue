@@ -1,13 +1,16 @@
 <script setup lang="ts">
 const { user } = useAuth()
 
+
 const services = [
   { id: 1, title: 'Диагностика', price: '3000 ₽' },
   { id: 2, title: 'ТО Jaguar', price: '12000 ₽' },
   { id: 3, title: 'Ремонт двигателя', price: 'от 50000 ₽' },
   { id: 4, title: 'Замена масла', price: 'от 5000 ₽' },
   { id: 5, title: 'Ремонт подвески', price: 'от 12000 ₽' },
-  { id: 5, title: 'Тюнинг и апгрейд', price: 'от 20000 ₽' }
+  { id: 5, title: 'Тюнинг и апгрейд', price: 'от 20000 ₽' },
+  { id: 6, title: 'Заправка автокондиционера', price: '800 ₽'},
+  { id: 7, title: 'Установка сигнализации', price: '3000 ₽'}
 
 ]
 </script>

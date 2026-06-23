@@ -11,15 +11,20 @@ export default defineEventHandler(async (event) => {
       status: body.status
     },
     include: {
-      user: true
+      user: true,
+      car: true
     }
   })
 
-  await transporter.sendMail({
-    to: booking.user.email,
-    subject: 'Статус заявки изменён',
-    text: `Статус вашей заявки "${booking.service}" изменён на: ${body.status}`
-  })
+  try {
+    await transporter.sendMail({
+      to: booking.user.email,
+      subject: 'Статус заявки изменён',
+      text: `Статус вашей заявки "${booking.service}" изменён на: ${body.status}`
+    })
+  } catch {
+    console.log('Письмо не отправлено, но статус изменён')
+  }
 
   return booking
 })

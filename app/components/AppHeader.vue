@@ -34,12 +34,13 @@ onMounted(() => {
         <div v-else class="flex items-center gap-3">
   
   <!-- ADMIN -->
-  <span 
-    v-if="user?.role === 'ADMIN'" 
-    class="bg-red-600 text-white text-xs px-2 py-1 rounded"
-  >
-    ADMIN
-  </span>
+ <NuxtLink
+  v-if="user?.role === 'ADMIN'"
+  to="/admin"
+  class="bg-gray-200 text-black px-3 py-1 rounded"
+>
+  Админ-панель
+</NuxtLink>
 
   <!-- ПРОФИЛЬ -->
   <NuxtLink

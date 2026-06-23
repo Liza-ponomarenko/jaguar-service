@@ -27,10 +27,10 @@
       </NuxtLink>
 
       <NuxtLink
-        to="/account"
+        to="/contacts"
         class="bg-[#D9D9D9] text-[#1E1E1E] text-[18px] px-4 py-2 rounded"
       >
-        Записаться
+        Контакты
       </NuxtLink>
     </div>
   </div>

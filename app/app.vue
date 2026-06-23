@@ -1,9 +1,14 @@
 <template>
-  <div>
+  <div class="min-h-screen flex flex-col bg-[#ECECEC]">
+    
     <AppHeader />
-    <NuxtPage />
-    <AppFooter />
-  </div>
-  
-</template>
 
+    <!-- Основной контент -->
+    <main class="flex-1">
+      <NuxtPage />
+    </main>
+
+    <AppFooter />
+
+  </div>
+</template>
